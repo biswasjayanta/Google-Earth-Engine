@@ -1,0 +1,534 @@
+//Bagerhat District
+
+//2000
+var spatialFilteredB00 = landsat5.filterBounds(bagerhat);
+var temporalFilteredB00 = spatialFilteredB00.filterDate('2000-01-01', '2000-12-31'); // Temporal Firtering
+print('temporalFilteredB00', temporalFilteredB00);
+
+var cloud_freeB00 = temporalFilteredB00.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images B00',cloud_freeB00);
+
+
+var sortedB00 = cloud_freeB00.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images B00 :', sortedB00);
+var B00img = sortedB00;
+var B00img2 = cloud_freeB00;
+
+var B00composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: B00img2,
+  asFloat: true
+}).clip(bagerhat);
+
+Map.addLayer(B00composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var B00nir = B00composite.select('B2');
+var B00red = B00composite.select('B5')
+var B00ndwi = B00nir.subtract(B00red).divide(B00nir.add(B00red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(B00ndwi, ndwiViz, 'NDWI B00', false);
+
+//Export.image.toDrive({
+  //image: B00ndwi,
+  //description: 'BagerhatNDWI00',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: bagerhat
+//});
+
+
+//2005
+var spatialFilteredB05 = landsat5.filterBounds(bagerhat);
+var temporalFilteredB05 = spatialFilteredB05.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredB05', temporalFilteredB05);
+
+var cloud_freeB05 = temporalFilteredB05.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images B05',cloud_freeB05);
+
+
+var sortedB05 = cloud_freeB05.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images B05 :', sortedB05);
+var B05img = sortedB05;
+var B05img2 = cloud_freeB05;
+
+var B05composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: B05img2,
+  asFloat: true
+}).clip(bagerhat);
+
+Map.addLayer(B05composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var B05nir = B05composite.select('B2');
+var B05red = B05composite.select('B5')
+var B05ndwi = B05nir.subtract(B05red).divide(B05nir.add(B05red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(B05ndwi, ndwiViz, 'NDWI B05', false);
+
+//Export.image.toDrive({
+  //image: B05ndwi,
+  //description: 'BagerhatNDWI05',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: bagerhat
+//});
+
+//2010
+var spatialFilteredB10 = landsat5.filterBounds(bagerhat);
+var temporalFilteredB10 = spatialFilteredB10.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredB10', temporalFilteredB10);
+
+var cloud_freeB10 = temporalFilteredB10.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images B10',cloud_freeB10);
+
+
+var sortedB10 = cloud_freeB10.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images B10 :', sortedB10);
+var B10img = sortedB10;
+var B10img2 = cloud_freeB10;
+
+var B10composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: B10img2,
+  asFloat: true
+}).clip(bagerhat);
+
+Map.addLayer(B10composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var B10nir = B10composite.select('B2');
+var B10red = B10composite.select('B5')
+var B10ndwi = B10nir.subtract(B10red).divide(B10nir.add(B10red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(B10ndwi, ndwiViz, 'NDWI B10', false);
+
+//Export.image.toDrive({
+  //image: B10ndwi,
+  //description: 'BagerhatNDWI10',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: bagerhat
+//});
+
+//2015
+var spatialFilteredB15 = landsat8.filterBounds(bagerhat);
+var temporalFilteredB15 = spatialFilteredB15.filterDate('2015-01-01', '2015-12-31'); // Temporal Firtering
+print('temporalFilteredB15', temporalFilteredB15);
+
+var cloud_freeB15 = temporalFilteredB15.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images B15',cloud_freeB15);
+
+
+var sortedB15 = cloud_freeB15.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images B15 :', sortedB15);
+var B15img = sortedB15;
+var B15img2 = cloud_freeB15;
+
+var B15composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: B15img2,
+  asFloat: true
+}).clip(bagerhat);
+
+Map.addLayer(B15composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var B15nir = B15composite.select('B3');
+var B15red = B15composite.select('B6')
+var B15ndwi = B15nir.subtract(B15red).divide(B15nir.add(B15red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(B15ndwi, ndwiViz, 'NDWI B15', false);
+
+//Export.image.toDrive({
+  //image: B15ndwi,
+  //description: 'BagerhatNDWI15',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: bagerhat
+//});
+
+//2020
+var spatialFilteredB20 = landsat8.filterBounds(bagerhat);
+var temporalFilteredB20 = spatialFilteredB20.filterDate('2020-01-01', '2020-12-31'); // Temporal Firtering
+print('temporalFilteredB20', temporalFilteredB20);
+
+var cloud_freeB20 = temporalFilteredB20.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images B20',cloud_freeB20);
+
+
+var sortedB20 = cloud_freeB20.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images B20 :', sortedB20);
+var B20img = sortedB20;
+var B20img2 = cloud_freeB20;
+
+var B20composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: B20img2,
+  asFloat: true
+}).clip(bagerhat);
+
+Map.addLayer(B20composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var B20nir = B20composite.select('B3');
+var B20red = B20composite.select('B6')
+var B20ndwi = B20nir.subtract(B20red).divide(B20nir.add(B20red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(B20ndwi, ndwiViz, 'NDWI B20', false);
+
+//Export.image.toDrive({
+  //image: B20ndwi,
+  //description: 'BagerhatNDWI20',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: bagerhat
+//});
+
+
+//Khulna District
+
+//2000
+var spatialFilteredK00 = landsat5.filterBounds(khulna);
+var temporalFilteredK00 = spatialFilteredK00.filterDate('2000-01-01', '2000-12-31'); // Temporal Firtering
+print('temporalFilteredK00', temporalFilteredK00);
+
+var cloud_freeK00 = temporalFilteredK00.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images K00',cloud_freeK00);
+
+
+var sortedK00 = cloud_freeK00.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images K00 :', sortedK00);
+var K00img = sortedK00;
+var K00img2 = cloud_freeK00;
+
+var K00composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: K00img2,
+  asFloat: true
+}).clip(khulna);
+
+Map.addLayer(K00composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var K00nir = K00composite.select('B2');
+var K00red = K00composite.select('B5')
+var K00ndwi = K00nir.subtract(K00red).divide(K00nir.add(K00red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(K00ndwi, ndwiViz, 'NDWI K00', false);
+
+//Export.image.toDrive({
+  //image: K00ndwi,
+  //description: 'KhulnaNDWI00',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: khulna
+//});
+
+
+//2005
+var spatialFilteredK05 = landsat5.filterBounds(khulna);
+var temporalFilteredK05 = spatialFilteredK05.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredK05', temporalFilteredK05);
+
+var cloud_freeK05 = temporalFilteredK05.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images K05',cloud_freeK05);
+
+
+var sortedK05 = cloud_freeK05.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images K05 :', sortedK05);
+var K05img = sortedK05;
+var K05img2 = cloud_freeK05;
+
+var K05composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: K05img2,
+  asFloat: true
+}).clip(khulna);
+
+Map.addLayer(K05composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var K05nir = K05composite.select('B2');
+var K05red = K05composite.select('B5')
+var K05ndwi = K05nir.subtract(K05red).divide(K05nir.add(K05red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(K05ndwi, ndwiViz, 'NDWI K05', false);
+
+//Export.image.toDrive({
+  //image: K05ndwi,
+  //description: 'KhulnaNDWI05',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: khulna
+//});
+
+//2010
+var spatialFilteredK10 = landsat5.filterBounds(khulna);
+var temporalFilteredK10 = spatialFilteredK10.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredK10', temporalFilteredK10);
+
+var cloud_freeK10 = temporalFilteredK10.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images K10',cloud_freeK10);
+
+
+var sortedK10 = cloud_freeK10.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images K10 :', sortedK10);
+var K10img = sortedK10;
+var K10img2 = cloud_freeK10;
+
+var K10composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: K10img2,
+  asFloat: true
+}).clip(khulna);
+
+Map.addLayer(K10composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var K10nir = K10composite.select('B2');
+var K10red = K10composite.select('B5')
+var K10ndwi = K10nir.subtract(K10red).divide(K10nir.add(K10red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(K10ndwi, ndwiViz, 'NDWI K10', false);
+
+//Export.image.toDrive({
+  //image: K10ndwi,
+  //description: 'KhulnaNDWI10',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: khulna
+//});
+
+//2015
+var spatialFilteredK15 = landsat8.filterBounds(khulna);
+var temporalFilteredK15 = spatialFilteredK15.filterDate('2015-01-01', '2015-12-31'); // Temporal Firtering
+print('temporalFilteredK15', temporalFilteredK15);
+
+var cloud_freeK15 = temporalFilteredK15.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images K15',cloud_freeK15);
+
+
+var sortedK15 = cloud_freeK15.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images K15 :', sortedK15);
+var K15img = sortedK15;
+var K15img2 = cloud_freeK15;
+
+var K15composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: K15img2,
+  asFloat: true
+}).clip(khulna);
+
+Map.addLayer(K15composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var K15nir = K15composite.select('B3');
+var K15red = K15composite.select('B6')
+var K15ndwi = K15nir.subtract(K15red).divide(K15nir.add(K15red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(K15ndwi, ndwiViz, 'NDWI K15', false);
+
+//Export.image.toDrive({
+  //image: K15ndwi,
+  //description: 'KhulnaNDWI15',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: khulna
+//});
+
+//2020
+var spatialFilteredK20 = landsat8.filterBounds(khulna);
+var temporalFilteredK20 = spatialFilteredK20.filterDate('2020-01-01', '2020-12-31'); // Temporal Firtering
+print('temporalFilteredK20', temporalFilteredK20);
+
+var cloud_freeK20 = temporalFilteredK20.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images K20',cloud_freeK20);
+
+
+var sortedK20 = cloud_freeK20.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images K20 :', sortedK20);
+var K20img = sortedK20;
+var K20img2 = cloud_freeK20;
+
+var K20composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: K20img2,
+  asFloat: true
+}).clip(khulna);
+
+Map.addLayer(K20composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var K20nir = K20composite.select('B3');
+var K20red = K20composite.select('B6')
+var K20ndwi = K20nir.subtract(K20red).divide(K20nir.add(K20red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(K20ndwi, ndwiViz, 'NDWI K20', false);
+
+//Export.image.toDrive({
+  //image: K20ndwi,
+  //description: 'KhulnaNDWI20',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: khulna
+//});
+
+//Satkhira District
+
+//2000
+var spatialFilteredS00 = landsat5.filterBounds(satkhira);
+var temporalFilteredS00 = spatialFilteredS00.filterDate('2000-01-01', '2000-12-31'); // Temporal Firtering
+print('temporalFilteredS00', temporalFilteredS00);
+
+var cloud_freeS00 = temporalFilteredS00.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images S00',cloud_freeS00);
+
+
+var sortedS00 = cloud_freeS00.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images S00 :', sortedS00);
+var S00img = sortedS00;
+var S00img2 = cloud_freeS00;
+
+var S00composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: S00img2,
+  asFloat: true
+}).clip(satkhira);
+
+Map.addLayer(S00composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var S00nir = S00composite.select('B2');
+var S00red = S00composite.select('B5')
+var S00ndwi = S00nir.subtract(S00red).divide(S00nir.add(S00red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(S00ndwi, ndwiViz, 'NDWI S00', false);
+
+//Export.image.toDrive({
+  //image: S00ndwi,
+  //description: 'SatkhiraNDWI00',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: satkhira
+//});
+
+
+//2005
+var spatialFilteredS05 = landsat5.filterBounds(satkhira);
+var temporalFilteredS05 = spatialFilteredS05.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredS05', temporalFilteredS05);
+
+var cloud_freeS05 = temporalFilteredS05.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images S05',cloud_freeS05);
+
+
+var sortedS05 = cloud_freeS05.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images S05 :', sortedS05);
+var S05img = sortedS05;
+var S05img2 = cloud_freeS05;
+
+var S05composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: S05img2,
+  asFloat: true
+}).clip(satkhira);
+
+Map.addLayer(S05composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var S05nir = S05composite.select('B2');
+var S05red = S05composite.select('B5')
+var S05ndwi = S05nir.subtract(S05red).divide(S05nir.add(S05red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(S05ndwi, ndwiViz, 'NDWI S05', false);
+
+//Export.image.toDrive({
+  //image: S05ndwi,
+  //description: 'SatkhiraNDWI05',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: satkhira
+//});
+
+//2010
+var spatialFilteredS10 = landsat5.filterBounds(satkhira);
+var temporalFilteredS10 = spatialFilteredS10.filterDate('2005-01-01', '2005-12-31'); // Temporal Firtering
+print('temporalFilteredS10', temporalFilteredS10);
+
+var cloud_freeS10 = temporalFilteredS10.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images S10',cloud_freeS10);
+
+
+var sortedS10 = cloud_freeS10.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images S10 :', sortedS10);
+var S10img = sortedS10;
+var S10img2 = cloud_freeS10;
+
+var S10composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: S10img2,
+  asFloat: true
+}).clip(satkhira);
+
+Map.addLayer(S10composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var S10nir = S10composite.select('B2');
+var S10red = S10composite.select('B5')
+var S10ndwi = S10nir.subtract(S10red).divide(S10nir.add(S10red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(S10ndwi, ndwiViz, 'NDWI S10', false);
+
+//Export.image.toDrive({
+  //image: S10ndwi,
+  //description: 'SatkhiraNDWI10',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: satkhira
+//});
+
+//2015
+var spatialFilteredS15 = landsat8.filterBounds(satkhira);
+var temporalFilteredS15 = spatialFilteredS15.filterDate('2015-01-01', '2015-12-31'); // Temporal Firtering
+print('temporalFilteredS15', temporalFilteredS15);
+
+var cloud_freeS15 = temporalFilteredS15.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images S15',cloud_freeS15);
+
+
+var sortedS15 = cloud_freeS15.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images S15 :', sortedS15);
+var S15img = sortedS15;
+var S15img2 = cloud_freeS15;
+
+var S15composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: S15img2,
+  asFloat: true
+}).clip(satkhira);
+
+Map.addLayer(S15composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var S15nir = S15composite.select('B3');
+var S15red = S15composite.select('B6')
+var S15ndwi = S15nir.subtract(S15red).divide(S15nir.add(S15red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(S15ndwi, ndwiViz, 'NDWI S15', false);
+
+//Export.image.toDrive({
+  //image: S15ndwi,
+  //description: 'SatkhiraNDWI15',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: satkhira
+//});
+
+//2020
+var spatialFilteredS20 = landsat8.filterBounds(satkhira);
+var temporalFilteredS20 = spatialFilteredS20.filterDate('2020-01-01', '2020-12-31'); // Temporal Firtering
+print('temporalFilteredS20', temporalFilteredS20);
+
+var cloud_freeS20 = temporalFilteredS20.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images S20',cloud_freeS20);
+
+
+var sortedS20 = cloud_freeS20.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images S20 :', sortedS20);
+var S20img = sortedS20;
+var S20img2 = cloud_freeS20;
+
+var S20composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: S20img2,
+  asFloat: true
+}).clip(satkhira);
+
+Map.addLayer(S20composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+var S20nir = S20composite.select('B3');
+var S20red = S20composite.select('B6')
+var S20ndwi = S20nir.subtract(S20red).divide(S20nir.add(S20red));
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'white','green']};
+Map.addLayer(S20ndwi, ndwiViz, 'NDWI S20', false);
+
+//Export.image.toDrive({
+  //image: S20ndwi,
+  //description: 'SatkhiraNDWI20',
+  //scale:30,
+  //maxPixels: 500000000,
+  //region: satkhira
+//});
