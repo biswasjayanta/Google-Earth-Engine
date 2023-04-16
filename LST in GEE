@@ -108,11 +108,12 @@ Map.addLayer(LST, {min: 20.569706944223423, max:29.328077233404645, palette: [
  ]},'LST');
 
 var LST2 = LST.clip(table)
+
 // Export the image to your Google Drive account.
 Export.image.toDrive({
   image: LST2,
-  description: 'LST_Celsius_Jh',
-  folder: 'my_folder',
-  region: table,
-  crs: 'EPSG:4326',
-  maxPixels: 1e10});
+  description: 'LST_JH',
+  scale:30,
+  maxPixels: 500000000,
+  region: table
+});
