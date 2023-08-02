@@ -1,0 +1,30 @@
+var classArea = function(image){
+  var areaImage = ee.Image.pixelArea().addBands(
+        image);
+   
+  var areas = areaImage.reduceRegion({
+        reducer: ee.Reducer.sum().group({
+        groupField: 1,
+        groupName: 'classification',
+      }),
+      geometry: CMA,
+      scale: 30, 
+      maxPixels: 1e8
+      }); 
+  
+  var classAreas = ee.List(areas.get('groups'));
+   
+  var classAreaLists = classAreas.map(function(item) { // Function within a function to create a dictionary with the values for every group
+    var areaDict = ee.Dictionary(item);
+    var classNumber = ee.Number(areaDict.get('classification')).format();
+    var area = ee.Number(
+      areaDict.get('sum')).divide(1e6).round(); // The result will be in square meters, this converts them into square kilometers
+    return ee.List([classNumber, area]);
+  });
+   
+  var result = ee.Dictionary(classAreaLists.flatten()); // Flattens said dictionary so it is readable for us
+  return(result);
+};
+
+
+print('after:', classArea(classified));
