@@ -1,0 +1,86 @@
+//Map.addLayer(CMA);
+Map.setCenter(91.7832, 22.3569);
+Map.setZoom(12);
+
+var landsat = ee.ImageCollection('LANDSAT/LC08/C02/T1_RT')
+
+
+var train23 = ee.FeatureCollection(train);
+var test23 = ee.FeatureCollection(test);
+
+//Image Classification 2023
+var spatialFiltered = landsat.filterBounds(CMA);
+var temporalFiltered = spatialFiltered.filterDate('2023-01-01', '2023-03-31'); // Temporal Firtering
+print('temporalFiltered', temporalFiltered);
+
+var cloud_free = temporalFiltered.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images',cloud_free);
+
+
+var sorted = cloud_free.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images :', sorted);
+var img = sorted;
+var img2 = cloud_free;
+
+var composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: img,
+  asFloat: true
+}).clip(CMA);
+
+
+Map.addLayer(composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+
+
+var bands = ['B2', 'B3','B4','B5','B6','B7','B10'];
+var newfc = train23;
+var label = 'landcover'
+var newfc = newfc.randomColumn();
+
+var trainingset = newfc;
+
+var validset = test23;
+
+print(newfc);
+
+// Overlay the points on the imagery to get training.
+var training = composite.select(bands).sampleRegions({
+  collection: trainingset,
+  properties: [label],
+  scale: 30
+});
+
+print(training);
+var trained = ee.Classifier.smileCart().train(training, label, bands);
+
+// Classify the image with the same bands used for training.
+var classified = composite.select(bands).classify(trained);
+
+
+//Visualization
+Map.addLayer(classified,
+             {min: 1, max: 5, palette: ['0000ff','ff0000','013220','FFFDD0','90EE90']},
+             'classification');
+
+// Accuracy Assessment
+var test = classified.sampleRegions({
+  collection: validset,
+  properties: [label],
+  scale: 30
+});
+
+var trainAccuracy = test.errorMatrix('landcover','classification');
+print('Resubstitution error matrix: ', trainAccuracy);
+print('Training overall accuracy: ', trainAccuracy.accuracy());
+print('Training kappa: ', trainAccuracy.kappa());
+
+
+
+//Image Export to Drive
+Export.image.toDrive({
+  image: composite,
+  description: 'composite23',
+  scale:30,
+  maxPixels: 500000000,
+  region: CMA
+});
