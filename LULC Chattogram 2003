@@ -1,0 +1,91 @@
+Map.addLayer(CMA);
+Map.setCenter(91.82119793178501,22.364324371044813);
+Map.setZoom(13);
+
+//Satellite Image Import
+var landsat = ee.ImageCollection("LANDSAT/LT05/C02/T1")
+
+//Training and Test Dataset
+var train03 = ee.FeatureCollection(train);
+var test03 = ee.FeatureCollection(test);
+
+//Image Classification 2004
+var spatialFiltered = landsat.filterBounds(CMA);
+var temporalFiltered = spatialFiltered.filterDate('2003-11-01', '2003-12-01'); // Temporal Firtering
+print('temporalFiltered', temporalFiltered);
+
+var cloud_free = temporalFiltered.filter(ee.Filter.lt('CLOUD_COVER',5)); //Filtering out Cloudy Images 
+print('Cloud Free Images',cloud_free);
+
+
+var sorted = cloud_free.sort('DATE_ACQUIRED'); //Sorting
+
+//var mosaic = sorted.mosaic();
+
+//Map.addLayer(mosaic);
+
+print('Sorted Cloud Free Images :', sorted);
+var img = sorted;
+var img2 = cloud_free;
+
+//Image Composition
+var composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: img,
+  asFloat: true
+}).clip(CMA);
+
+
+Map.addLayer(composite, {bands: ['B2', 'B3', 'B4'], max: 0.5, gamma: 2},'L8 Image', true);
+
+var bands = ['B2', 'B3','B4','B5','B6','B7'];
+var newfc = train03;
+var label = 'landcover'
+var newfc = newfc.randomColumn();
+
+var trainingset = newfc;
+
+var validset = test03;
+
+print(newfc);
+//Overlay the points on the imagery to get training.
+var training = composite.select(bands).sampleRegions({
+  collection: trainingset,
+  properties: [label],
+  scale: 30
+});
+
+print(training);
+var trained = ee.Classifier.libsvm().train(training, label, bands);
+
+// Classify the image with the same bands used for training.
+var classified = composite.select(bands).classify(trained);
+
+
+//Visualization
+Map.addLayer(classified,
+             {min: 1, max: 5, palette: ['0000ff','ff0000','013220','FFFDD0','90EE90']},
+             'classification');
+
+//Accuracy Assessment
+var test = classified.sampleRegions({
+  collection: validset,
+  properties: [label],
+  scale: 30
+});
+
+var trainAccuracy = test.errorMatrix('landcover','classification');
+print('Resubstitution error matrix: ', trainAccuracy);
+print('Training overall accuracy: ', trainAccuracy.accuracy());
+print('Training kappa: ', trainAccuracy.kappa());
+
+
+
+//Image Export to Drive
+Export.image.toDrive({
+  image: composite,
+  description: 'Composite03',
+  scale:30,
+  maxPixels: 500000000,
+  region: CMA
+});
+
