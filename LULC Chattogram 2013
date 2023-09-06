@@ -1,0 +1,91 @@
+//Map.addLayer(CMA);
+Map.setCenter(91.7832, 22.3569);
+Map.setZoom(12);
+
+//Satellite Image Import
+var landsat = ee.ImageCollection('LANDSAT/LC08/C02/T1_RT')
+
+//Training and Test Dataset
+var train13 = ee.FeatureCollection(table);
+var test13 = ee.FeatureCollection(test);
+
+//Image Classification 2013
+var spatialFiltered = landsat.filterBounds(CMA);
+var temporalFiltered = spatialFiltered.filterDate('2013-01-01', '2013-12-31'); // Temporal Firtering
+print('temporalFiltered', temporalFiltered);
+
+var cloud_free = temporalFiltered.filter(ee.Filter.lt('CLOUD_COVER',1)); //Filtering out Cloudy Images 
+print('Cloud Free Images',cloud_free);
+
+
+var sorted = cloud_free.sort('DATE_ACQUIRED'); //Sorting
+
+print('Sorted Cloud Free Images :', sorted);
+var img = sorted;
+var img2 = cloud_free;
+
+//Image Composition
+var composite = ee.Algorithms.Landsat.simpleComposite({
+  collection: img,
+  asFloat: true
+}).clip(CMA);
+
+Map.addLayer(composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'L8 Image', false);
+
+var bands = ['B2', 'B3','B4','B5','B6','B7','B10'];
+var newfc = train13;
+var label = 'landcover'
+var newfc = newfc.randomColumn();
+
+//var split = 0.80;
+var trainingset = newfc;
+
+var validset = test13;
+
+print(newfc);
+// Overlay the points on the imagery to get training.
+var training = composite.select(bands).sampleRegions({
+  collection: trainingset,
+  properties: [label],
+  scale: 30
+});
+
+print(training);
+var trained = ee.Classifier.smileGradientTreeBoost(10).train(training, label, bands);
+
+// Classify the image with the same bands used for training.
+var classified = composite.select(bands).classify(trained);
+
+
+//Visualization
+Map.addLayer(classified,
+             {min: 1, max: 5, palette: ['0000ff','ff0000','013220','FFFDD0','90EE90']},
+             'classification');
+
+// Accuracy Assessment
+var test = classified.sampleRegions({
+  collection: validset,
+  properties: [label],
+  scale: 30
+});
+
+var trainAccuracy = test.errorMatrix('landcover','classification');
+print('Resubstitution error matrix: ', trainAccuracy);
+print('Training overall accuracy: ', trainAccuracy.accuracy());
+print('Training kappa: ', trainAccuracy.kappa());
+
+//var nir = composite.select('B5');
+//var red = composite.select('B4');
+
+//var SAVI13 = ((nir.subtract(red)).divide(nir.add(red).add(0.5))).multiply(1.5);
+
+//Map.addLayer(SAVI13,{min: -1, max: 1, palette: ['0000ff','ff0000']},'SAVI03');
+
+//Image Export to Drive
+Export.image.toDrive({
+  image: composite,
+  description: 'Composite13',
+  scale:30,
+  maxPixels: 500000000,
+  region: CMA
+});
