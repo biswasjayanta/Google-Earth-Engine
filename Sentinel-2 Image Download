@@ -1,0 +1,76 @@
+Map.setCenter(89.61277452417015, 22.476931010618657); 
+Map.setZoom(8);
+
+Map.addLayer(aoi);
+var sentinel = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED");
+
+var composite = senti.filterBounds(aoi)
+                .filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'less_than', 0.1)
+                .filterDate('2015-01-01', '2015-12-31')
+                .select(['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'])
+                .median()
+                .clip(aoi).multiply(0.0001);
+                
+
+Map.addLayer(composite, {bands: ['B4', 'B3', 'B2'], max: 0.5, gamma: 2},'Sentinel Image', true);
+var bands = ['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'];
+
+
+
+var palette = ['grey','green','red','darkgreen','blue'];
+//Map.addLayer(outlines, {palette: palette, min: 1, max: 5}, 'different color edges');
+
+var bands = ['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'];
+var newfc = training;
+var label = 'Class_1'
+var newfc = newfc.randomColumn();
+
+var split = 0.80;
+
+var trainingset = newfc.filter(ee.Filter.lt('random', split));
+var validset = newfc.filter(ee.Filter.gte('random', split));
+
+
+print(newfc);
+// Overlay the points on the imagery to get training.
+var training1 = composite.select(bands).sampleRegions({
+  collection: trainingset,
+  properties: [label],
+  scale: 10
+});
+
+print(training);
+var trained = ee.Classifier.smileCart().train(training1, label, bands);
+
+// Classify the image with the same bands used for training.
+var classified = composite.select(bands).classify(trained);
+
+
+//Visualization
+Map.addLayer(classified,
+             {min: 1, max: 5, palette: ['grey','green','red','darkgreen','blue']},
+             'classification');
+
+// Accuracy Assessment
+var test = classified.sampleRegions({
+  collection: validset,
+  properties: [label],
+  scale: 10
+});
+
+var trainAccuracy = test.errorMatrix('Class_1','classification');
+print('Resubstitution error matrix: ', trainAccuracy);
+print('Training overall accuracy: ', trainAccuracy.accuracy());
+print('Training kappa: ', trainAccuracy.kappa());
+
+
+
+//Image Export to Drive
+Export.image.toDrive({
+  image: classified,
+  description: 'ClassifiedImage',
+  folder: 'Paper-2',
+  scale:10,
+  maxPixels: 50000000000,
+  region: aoi
+});
