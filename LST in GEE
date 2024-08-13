@@ -1,119 +1,150 @@
-//cloud mask
-function maskL8sr(col) {
-  // Bits 3 and 5 are cloud shadow and cloud, respectively.
-  var cloudShadowBitMask = (1 << 3);
-  var cloudsBitMask = (1 << 5);
-  // Get the pixel QA band.
-  var qa = col.select('pixel_qa');
-  // Both flags should be set to zero, indicating clear conditions.
-  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
-                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
-  return col.updateMask(mask);
+Map.addLayer(aoi, {}, 'AOI - Saint Martin');
+Map.centerObject(aoi, 10);
+
+var startDate = '2015-01-31';
+var endDate = '2015-03-31';
+
+// Applies scaling factors.
+function applyScaleFactors(image) {
+ // Scale and offset values for optical bands
+ var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
+ 
+ // Scale and offset values for thermal bands
+ var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0);
+ 
+ // Add scaled bands to the original image
+ return image.addBands(opticalBands, null, true)
+ .addBands(thermalBands, null, true);
 }
 
-//vis params
-var vizParams = {
-bands: ['B5', 'B6', 'B4'],
-min: 0,
-max: 4000,
-gamma: [1, 0.9, 1.1]
+// Function to Mask Clouds and Cloud Shadows in Landsat 8 Imagery
+
+function cloudMask(image) {
+  // Define cloud shadow and cloud bitmasks (Bits 3 and 5)
+  var cloudShadowBitmask = (1 << 3);
+  var cloudBitmask = (1 << 5);
+
+  // Select the Quality Assessment (QA) band for pixel quality information
+  var qa = image.select('QA_PIXEL');
+
+  // Create a binary mask to identify clear conditions (both cloud and cloud shadow bits set to 0)
+  var mask = qa.bitwiseAnd(cloudShadowBitmask).eq(0)
+                .and(qa.bitwiseAnd(cloudBitmask).eq(0));
+
+  // Update the original image, masking out cloud and cloud shadow-affected pixels
+  return image.updateMask(mask);
+}
+
+// Import and preprocess Landsat 8 imagery
+var image = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
+              .filterBounds(aoi)
+              .filterDate(startDate, endDate)
+              .map(applyScaleFactors)
+              .map(cloudMask)
+              .median()
+              .clip(aoi);
+
+// Define visualization parameters for True Color imagery (bands 4, 3, and 2)
+var visualization = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 0.0,
+  max: 0.15,
 };
 
-var vizParams2 = {
-bands: ['B4', 'B3', 'B2'],
-min: 0,
-max: 3000,
-gamma: 1.4,
+// Add the processed image to the map with the specified visualization
+Map.addLayer(image, visualization, 'True Color 432');
+
+// Calculate Normalized Difference Vegetation Index (NDVI)
+var ndvi = image.normalizedDifference(['SR_B5', 'SR_B4']).rename('NDVI');
+
+// Define NDVI Visualization Parameters
+var ndviPalette = {
+ min: -1,
+ max: 1,
+ palette: ['blue', 'white', 'green']
 };
 
-//load the collection:
- {
-var col = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
-.map(maskL8sr)
-.filterDate('2021-01-01','2021-12-31')
-.filterBounds(table);
-}
-print(col, 'coleccion');
+Map.addLayer(ndvi, ndviPalette, 'NDVI Saint Martin')
 
-//imagen reduction
-{
-var image = col.median();
-print(image, 'image');
-Map.addLayer(image, vizParams2);
-}
-
-
-//median
-{
-var ndvi = image.normalizedDifference(['B5', 
-'B4']).rename('NDVI');
-var ndviParams = {min: -1, max: 1, palette: ['blue', 'white', 
-'green']};
-print(ndvi,'ndvi');
-Map.addLayer(ndvi, ndviParams, 'ndvi');
-}
-
-//select thermal band 10(with brightness tempereature), no calculation 
-var thermal= image.select('B10').multiply(0.1);
-var b10Params = {min: 291.918, max: 302.382, palette: ['blue', 
-'white', 'green']};
-Map.addLayer(thermal, b10Params, 'thermal');
-
-// find the min and max of NDVI
-{
-var min = ee.Number(ndvi.reduceRegion({
-reducer: ee.Reducer.min(),
-geometry: table,
-scale: 30,
-maxPixels: 1e9
+// Calculate the minimum NDVI value within the AOI
+var ndviMin = ee.Number(ndvi.reduceRegion({
+  reducer   : ee.Reducer.min(),
+  geometry  : aoi,
+  scale     : 30,
+  maxPixels : 1e9
 }).values().get(0));
-print(min, 'min');
-var max = ee.Number(ndvi.reduceRegion({
-reducer: ee.Reducer.max(),
-geometry: table,
-scale: 30,
-maxPixels: 1e9
+
+// Calculate the maximum NDVI value within the AOI
+var ndviMax = ee.Number(ndvi.reduceRegion({
+  reducer   : ee.Reducer.max(),
+  geometry  : aoi,
+  scale     : 30,
+  maxPixels : 1e9
 }).values().get(0));
-print(max, 'max')
-}
 
-//fractional vegetation
-{
-var fv =(ndvi.subtract(min).divide(max.subtract(min))).pow(ee.Number(2)).rename('FV'); 
-print(fv, 'fv');
-Map.addLayer(fv);
-}
+// Print the Minimum and Maximum NDVI Values
+print("Minimum NDVI:", ndviMin);
+print("Maximum NDVI:", ndviMax);
 
-//Emissivity
+// Fraction of Vegetation (FV) Calculation
+// Formula: ((NDVI - NDVI_min) / (NDVI_max - NDVI_min))^2
 
-var a= ee.Number(0.004);
-var b= ee.Number(0.986);
-var EM=fv.multiply(a).add(b).rename('EMM');
-var imageVisParam3 = {min: 0.9865619146722164, max:0.989699971371314};
-Map.addLayer(EM, imageVisParam3,'EMM');
+// Calculate the Fraction of Vegetation (FV) using the NDVI values within the specified range.
+// NDVI_min represents the minimum NDVI value, and NDVI_max represents the maximum NDVI value
+var fv = ((ndvi.subtract(ndviMin)).divide(ndviMax.subtract(ndviMin)))
+          .pow(ee.Number(2))
+          .rename('FV');
+        
+  
+// Emissivity Calculation
+// Formula: 0.004 * FV + 0.986
 
-//LST in Celsius Degree bring -273.15
-//NB: In Kelvin don't bring -273.15
-var LST = thermal.expression(
-'(Tb/(1 + (0.00115* (Tb / 1.438))*log(Ep)))-273.15', {
- 'Tb': thermal.select('B10'),
-'Ep': EM.select('EMM')
-}).rename('LST');
-Map.addLayer(LST, {min: 20.569706944223423, max:29.328077233404645, palette: [
-'040274', '040281', '0502a3', '0502b8', '0502ce', '0502e6',
-'0602ff', '235cb1', '307ef3', '269db1', '30c8e2', '32d3ef',
-'3be285', '3ff38f', '86e26f', '3ae237', 'b5e22e', 'd6e21f',
-'fff705', 'ffd611', 'ffb613', 'ff8b13', 'ff6e08', 'ff500d',
-'ff0000', 'de0101', 'c21301', 'a71001', '911003'
- ]},'LST');
+// Calculate Land Surface Emissivity (EM) using the Fraction of Vegetation (FV).
+// The 0.004 coefficient represents the emissivity variation due to vegetation,
+// and the 0.986 represents the base emissivity for other surfaces.
 
-var LST2 = LST.clip(table)
+var em = fv.multiply(ee.Number(0.004)).add(ee.Number(0.986)).rename('EM');
 
-// Export the image to your Google Drive account.
+// Select Thermal Band (Band 10) and Rename It
+var thermal = image.select('ST_B10').rename('thermal');
+
+// Now, lets calculate the land surface temperature (LST)
+
+// Formula: (TB / (1 + (λ * (TB / 1.438)) * ln(em))) - 273.15
+var lst = thermal.expression(
+  '(TB / (1 + (0.00115 * (TB / 1.438)) * log(em))) - 273.15', {
+    'TB': thermal.select('thermal'), // Select the thermal band (TB)
+    'em': em // Assign emissivity (em)
+  }).rename('LST Saint Martin 2023');
+
+// Add the LST Layer to the Map with Custom Visualization Parameters
+Map.addLayer(lst, {
+  min: 18.47, // Minimum LST value
+  max: 42.86, // Maximum LST value
+  palette: [
+    '040274', '040281', '0502a3', '0502b8', '0502ce', '0502e6',
+    '0602ff', '235cb1', '307ef3', '269db1', '30c8e2', '32d3ef',
+    '3be285', '3ff38f', '86e26f', '3ae237', 'b5e22e', 'd6e21f',
+    'fff705', 'ffd611', 'ffb613', 'ff8b13', 'ff6e08', 'ff500d',
+    'ff0000', 'de0101', 'c21301', 'a71001', '911003'
+  ]}, 'Land Surface Temperature 2023');
+
+// Export the LST image to Google Drive
 Export.image.toDrive({
-  image: LST2,
-  description: 'LST_JH',
-  scale:30,
-  maxPixels: 500000000,
-  region: table
+  image: lst,
+  description: 'LST_15',
+  scale: 30,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+// Export the LST image to Google Drive
+Export.image.toDrive({
+  image: ndvi,
+  description: 'NDVI_15',
+  scale: 30,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
 });
