@@ -1,0 +1,217 @@
+/**
+ * Function to mask clouds using the Sentinel-2 QA band
+ * @param {ee.Image} image Sentinel-2 image
+ * @return {ee.Image} cloud masked Sentinel-2 image
+ */
+function maskS2clouds(image) {
+  var qa = image.select('QA60');
+
+  // Bits 10 and 11 are clouds and cirrus, respectively.
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+      .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+
+  return image.updateMask(mask).divide(10000);
+}
+
+var dataset = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+                  .filterDate('2018-01-01', '2018-12-31')
+                  // Pre-filter to get less cloudy granules.
+                  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',1))
+                  .map(maskS2clouds)
+                  .select(['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'])
+                  .filterBounds(aoi);
+
+var visualization = {
+  min: 0.0,
+  max: 0.3,
+  bands: ['B4', 'B3', 'B2'],
+};
+
+
+var composite = dataset.median().clip(aoi);
+
+Map.addLayer(composite, visualization, 'RGB');
+
+
+var msavi = composite.expression(
+  '((2 * NIR + 1) - sqrt((2 * NIR + 1) ** 2 - 8 * (NIR - RED))) / 2', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR': composite.select('B8'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+var wai = composite.expression(
+  '(BLUE-0.13)*(((SWIR1+GREEN+RED+NIR-4*BLUE)/(4*BLUE+SWIR1+GREEN+RED+NIR)) + ((SWIR2-BLUE)/(BLUE+SWIR2)))-(BLUE-0.13)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR': composite.select('B8'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+
+var evi = composite.expression(
+  '2.5 * (NIR - RED) / ((NIR + 6*RED - 7.5*BLUE) + 1)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR': composite.select('B8'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+var ndwi = composite.expression(
+  '(GREEN - NIR) / (GREEN + NIR)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR': composite.select('B8'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+var arvi = composite.expression(
+  '(NIR - 2 * RED + BLUE) / (NIR + 2 * RED + BLUE)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR': composite.select('B8'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+var spm = composite.expression(
+  '(NIR1)/(GREEN)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR1': composite.select('B8A'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+var mawei = composite.expression(
+  '5*(GREEN-NIR1)+(BLUE+RED-4*SWIR2)', 
+  {
+    'BLUE': composite.select('B2'),    // Blue band
+    'GREEN': composite.select('B3'),   // Green band
+    'RED': composite.select('B4'),     // Red band
+    'NIR1': composite.select('B8A'),     // Near Infrared (NIR) band
+    'SWIR1': composite.select('B11'),   // Shortwave Infrared 1 (SWIR1) band
+    'SWIR2': composite.select('B12')    // Shortwave Infrared 2 (SWIR2) band
+  }
+);
+
+// Visualization parameters
+var spmVis = {
+  min: 0, 
+  max: 5, 
+  palette: ['blue', 'green', 'yellow', 'red']
+};
+Map.addLayer(spm, spmVis, 'Suspended Particulate Matter (SPM)');
+Map.centerObject(aoi, 6);
+
+
+// Calculate NDVI-like index for turbidity
+var turbidityIndex = composite.normalizedDifference(['B3', 'B4']);  // B3 = Green, B4 = Red
+
+// Visualization parameters
+var turbidityVis = {
+  min: 0, 
+  max: 1, 
+  palette: ['blue', 'green', 'yellow', 'red']
+};
+Map.addLayer(turbidityIndex, turbidityVis, 'Turbidity');
+Map.centerObject(aoi, 6);
+
+Export.image.toDrive({
+  image: msavi,
+  description: 'MSAVI_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: wai,
+  description: 'WAI_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: evi,
+  description: 'EVI_18_1',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: ndwi,
+  description: 'NDWI_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: arvi,
+  description: 'ARVI_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: turbidityIndex,
+  description: 'Turbidity_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: spm,
+  description: 'SPM_24',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: mawei,
+  description: 'MAWEI_18',
+  scale: 10,
+  region: aoi,
+  folder: 'Paper-3',
+  fileFormat: 'GeoTIFF'
+});
